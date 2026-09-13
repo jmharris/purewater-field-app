@@ -20,6 +20,8 @@
       padding: 24px;
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
     }
+    h1 { font-size: 22px; margin-top: 0; }
+    h2 { font-size: 18px; }
     button {
       width: 100%;
       padding: 16px;
@@ -31,9 +33,67 @@
       cursor: pointer;
       margin-top: 12px;
     }
-    button:active {
-      background: #014486;
+    button:active { background: #014486; }
+    button.secondary {
+      background: white;
+      color: #0176d3;
+      border: 2px solid #0176d3;
     }
+    button:disabled {
+      background: #c9c9c9;
+      color: #666;
+      cursor: not-allowed;
+    }
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-top: 8px;
+    }
+    label {
+      display: block;
+      margin-top: 16px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .candidate-card {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 16px;
+      border-radius: 8px;
+      border: 2px solid #ddd;
+      background: white;
+      margin-top: 10px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .candidate-card:active { background: #f0f7ff; border-color: #0176d3; }
+    .candidate-distance {
+      display: block;
+      font-size: 13px;
+      color: #666;
+      margin-top: 4px;
+    }
+    .product-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .product-row label { margin: 0; font-weight: normal; font-size: 16px; flex: 1; }
+    .product-qty {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .product-qty.visible { display: flex; }
+    .product-qty input { width: 70px; margin-top: 0; }
     #status {
       margin-top: 16px;
       font-size: 14px;
@@ -41,43 +101,157 @@
       white-space: pre-wrap;
       word-break: break-word;
     }
-    .error {
-      color: #b00020;
+    .error { color: #b00020; }
+    .total-line {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 20px;
+      text-align: right;
+    }
+    .step { display: none; }
+    .step.active { display: block; }
+    .spinner {
+      text-align: center;
+      padding: 24px;
+      color: #666;
     }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>PureWater Field App</h1>
-    <div id="loggedOutView">
+
+    <!-- Logged out -->
+    <div id="loggedOutView" class="step">
       <p>Log in with your Salesforce account to record a service visit.</p>
       <button id="loginBtn">Log In</button>
     </div>
-    <div id="loggedInView" hidden>
-      <p>Logged in.</p>
-      <button id="testQueryBtn">Test: Query Accounts</button>
-      <button id="logoutBtn">Log Out</button>
+
+    <div id="loggedInApp" class="step">
+      <!-- Step: locating -->
+      <div id="stepLocating" class="step">
+        <div class="spinner">Finding your location...</div>
+        <button class="secondary" id="skipLocationBtn">Skip and search manually</button>
+      </div>
+
+      <!-- Step: pick account -->
+      <div id="stepAccount" class="step">
+        <h2>Which address is this?</h2>
+        <div id="candidateList"></div>
+        <button class="secondary" id="searchInsteadBtn">None of these / search manually</button>
+
+        <div id="searchBox" hidden>
+          <label for="searchInput">Search by name or address</label>
+          <input type="text" id="searchInput" placeholder="e.g. Smith or Main St" />
+          <button id="runSearchBtn">Search</button>
+          <div id="searchResults"></div>
+          <button class="secondary" id="createNewBtn">Create new address</button>
+        </div>
+
+        <div id="newAccountBox" hidden>
+          <label for="newAccountName">Customer name (optional)</label>
+          <input type="text" id="newAccountName" placeholder="e.g. Jane Smith" />
+          <label for="newAccountStreet">Street address</label>
+          <input type="text" id="newAccountStreet" placeholder="123 Main St" />
+          <label for="newAccountCity">City</label>
+          <input type="text" id="newAccountCity" placeholder="Edmond" />
+          <label for="newAccountZip">Zip code</label>
+          <input type="text" id="newAccountZip" placeholder="73025" />
+          <button id="useNewAccountBtn">Use this address</button>
+        </div>
+      </div>
+
+      <!-- Step: products -->
+      <div id="stepProducts" class="step">
+        <h2>What was done?</h2>
+        <div id="productList"></div>
+        <button id="toProductsNextBtn">Next</button>
+        <button class="secondary" id="backToAccountBtn">Back</button>
+      </div>
+
+      <!-- Step: summary -->
+      <div id="stepSummary" class="step">
+        <h2>Visit summary</h2>
+        <label for="occupantName">Who was home? (optional)</label>
+        <input type="text" id="occupantName" placeholder="e.g. Jane Smith" />
+        <label for="visitNotes">Notes (optional)</label>
+        <input type="text" id="visitNotes" placeholder="Any notes about this visit" />
+        <div class="total-line" id="totalLine">Total: $0.00</div>
+        <button id="submitBtn">Submit Visit</button>
+        <button class="secondary" id="backToProductsBtn">Back</button>
+      </div>
+
+      <!-- Step: confirmation -->
+      <div id="stepDone" class="step">
+        <h2>Visit recorded</h2>
+        <p id="doneMessage"></p>
+        <button id="newVisitBtn">New Visit</button>
+      </div>
+
+      <button class="secondary" id="logoutBtn">Log Out</button>
     </div>
+
     <div id="status"></div>
   </div>
 
   <script src="salesforce.js"></script>
+  <script src="app.js"></script>
   <script>
+    const steps = {
+      locating: document.getElementById("stepLocating"),
+      account: document.getElementById("stepAccount"),
+      products: document.getElementById("stepProducts"),
+      summary: document.getElementById("stepSummary"),
+      done: document.getElementById("stepDone"),
+    };
     const loggedOutView = document.getElementById("loggedOutView");
-    const loggedInView = document.getElementById("loggedInView");
+    const loggedInApp = document.getElementById("loggedInApp");
     const statusEl = document.getElementById("status");
 
+    let visitState = {
+      selectedAccountId: null,
+      newAccountName: null,
+      newAccountStreet: null,
+      newAccountCity: null,
+      newAccountPostalCode: null,
+      occupantName: "",
+      notes: "",
+      lineItems: [],
+    };
+    let catalogCache = null;
+
     function setStatus(text, isError) {
-      statusEl.textContent = text;
+      statusEl.textContent = text || "";
       statusEl.className = isError ? "error" : "";
+    }
+
+    function showStep(name) {
+      Object.entries(steps).forEach(([key, el]) => el.classList.toggle("active", key === name));
+    }
+
+    function resetVisitState() {
+      visitState = {
+        selectedAccountId: null,
+        newAccountName: null,
+        newAccountStreet: null,
+        newAccountCity: null,
+        newAccountPostalCode: null,
+        occupantName: "",
+        notes: "",
+        lineItems: [],
+      };
     }
 
     function refreshView() {
       const loggedIn = window.SalesforceApi.isLoggedIn();
-      loggedOutView.hidden = loggedIn;
-      loggedInView.hidden = !loggedIn;
+      loggedOutView.classList.toggle("active", !loggedIn);
+      loggedInApp.classList.toggle("active", loggedIn);
+      if (loggedIn) {
+        startLocating();
+      }
     }
 
+    // --- Login/logout ---
     document.getElementById("loginBtn").addEventListener("click", () => {
       try {
         window.SalesforceApi.login();
@@ -92,16 +266,233 @@
       setStatus("Logged out.");
     });
 
-    document.getElementById("testQueryBtn").addEventListener("click", async () => {
-      setStatus("Querying...");
+    // --- Step: locating ---
+    function startLocating() {
+      showStep("locating");
+      setStatus("");
+      if (!navigator.geolocation) {
+        showAccountStep([]);
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const candidates = await window.ServiceVisitApp.findNearbyAccounts(
+              position.coords.latitude,
+              position.coords.longitude
+            );
+            showAccountStep(candidates);
+          } catch (err) {
+            setStatus(err.message, true);
+            showAccountStep([]);
+          }
+        },
+        () => {
+          // denied or timed out -- fall back to manual search, not an error state
+          showAccountStep([]);
+        },
+        { timeout: 10000 }
+      );
+    }
+
+    document.getElementById("skipLocationBtn").addEventListener("click", () => {
+      showAccountStep([]);
+    });
+
+    // --- Step: account selection ---
+    function showAccountStep(candidates) {
+      showStep("account");
+      const list = document.getElementById("candidateList");
+      list.innerHTML = "";
+      candidates.forEach((c) => {
+        const btn = document.createElement("button");
+        btn.className = "candidate-card";
+        const distanceText =
+          c.distanceMiles != null ? `${c.distanceMiles.toFixed(2)} mi away` : "";
+        btn.innerHTML = `${escapeHtml(c.name)}${c.street ? " — " + escapeHtml(c.street) : ""}` +
+          (distanceText ? `<span class="candidate-distance">${distanceText}</span>` : "");
+        btn.addEventListener("click", () => selectAccount(c.accountId));
+        list.appendChild(btn);
+      });
+      document.getElementById("searchBox").hidden = true;
+      document.getElementById("newAccountBox").hidden = true;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str || "";
+      return div.innerHTML;
+    }
+
+    function selectAccount(accountId) {
+      visitState.selectedAccountId = accountId;
+      visitState.newAccountStreet = null;
+      visitState.newAccountCity = null;
+      visitState.newAccountPostalCode = null;
+      visitState.newAccountName = null;
+      goToProductsStep();
+    }
+
+    document.getElementById("searchInsteadBtn").addEventListener("click", () => {
+      document.getElementById("searchBox").hidden = false;
+      document.getElementById("newAccountBox").hidden = true;
+    });
+
+    document.getElementById("runSearchBtn").addEventListener("click", async () => {
+      const term = document.getElementById("searchInput").value;
+      setStatus("Searching...");
       try {
-        const records = await window.SalesforceApi.runQuery(
-          "SELECT Id, Name FROM Account WHERE Merge_Status__c = 'Active' LIMIT 5"
-        );
-        setStatus("Success! Sample accounts:\n" + records.map((r) => r.Name).join("\n"));
+        const results = await window.ServiceVisitApp.searchAccounts(term);
+        const container = document.getElementById("searchResults");
+        container.innerHTML = "";
+        if (results.length === 0) {
+          setStatus("No matches found. Try a different search, or create a new address.");
+        } else {
+          setStatus("");
+        }
+        results.forEach((c) => {
+          const btn = document.createElement("button");
+          btn.className = "candidate-card";
+          btn.textContent = `${c.name}${c.street ? " — " + c.street : ""}`;
+          btn.addEventListener("click", () => selectAccount(c.accountId));
+          container.appendChild(btn);
+        });
       } catch (err) {
         setStatus(err.message, true);
       }
+    });
+
+    document.getElementById("createNewBtn").addEventListener("click", () => {
+      document.getElementById("newAccountBox").hidden = false;
+    });
+
+    document.getElementById("useNewAccountBtn").addEventListener("click", () => {
+      const street = document.getElementById("newAccountStreet").value.trim();
+      const city = document.getElementById("newAccountCity").value.trim();
+      if (!street || !city) {
+        setStatus("Street and city are required for a new address.", true);
+        return;
+      }
+      visitState.selectedAccountId = null;
+      visitState.newAccountName = document.getElementById("newAccountName").value.trim() || null;
+      visitState.newAccountStreet = street;
+      visitState.newAccountCity = city;
+      visitState.newAccountPostalCode = document.getElementById("newAccountZip").value.trim() || null;
+      setStatus("");
+      goToProductsStep();
+    });
+
+    // --- Step: products ---
+    async function goToProductsStep() {
+      showStep("products");
+      setStatus("");
+      try {
+        if (!catalogCache) {
+          catalogCache = await window.ServiceVisitApp.getServiceCatalog();
+        }
+        renderProductList(catalogCache);
+      } catch (err) {
+        setStatus(err.message, true);
+      }
+    }
+
+    function renderProductList(catalog) {
+      const list = document.getElementById("productList");
+      list.innerHTML = "";
+      catalog.forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "product-row";
+        const rowId = `product-${item.pricebookEntryId}`;
+        row.innerHTML = `
+          <label><input type="checkbox" id="${rowId}-check" /> ${escapeHtml(item.name)}</label>
+        `;
+        const qtyDiv = document.createElement("div");
+        qtyDiv.className = "product-qty";
+        qtyDiv.id = `${rowId}-qty`;
+        qtyDiv.innerHTML = `
+          Qty <input type="number" id="${rowId}-qty-input" value="1" min="1" />
+          $ <input type="number" id="${rowId}-price-input" value="${item.unitPrice}" step="0.01" />
+        `;
+        list.appendChild(row);
+        list.appendChild(qtyDiv);
+
+        const checkbox = row.querySelector(`#${rowId}-check`);
+        checkbox.addEventListener("change", () => {
+          qtyDiv.classList.toggle("visible", checkbox.checked);
+        });
+      });
+    }
+
+    function collectSelectedLineItems() {
+      const lineItems = [];
+      catalogCache.forEach((item) => {
+        const rowId = `product-${item.pricebookEntryId}`;
+        const checkbox = document.getElementById(`${rowId}-check`);
+        if (checkbox && checkbox.checked) {
+          const qty = parseFloat(document.getElementById(`${rowId}-qty-input`).value) || 1;
+          const price = parseFloat(document.getElementById(`${rowId}-price-input`).value) || 0;
+          lineItems.push({ pricebookEntryId: item.pricebookEntryId, quantity: qty, unitPrice: price });
+        }
+      });
+      return lineItems;
+    }
+
+    document.getElementById("toProductsNextBtn").addEventListener("click", () => {
+      const lineItems = collectSelectedLineItems();
+      if (lineItems.length === 0) {
+        setStatus("Select at least one product or service.", true);
+        return;
+      }
+      visitState.lineItems = lineItems;
+      setStatus("");
+      showSummaryStep();
+    });
+
+    document.getElementById("backToAccountBtn").addEventListener("click", () => {
+      showStep("account");
+    });
+
+    // --- Step: summary ---
+    function showSummaryStep() {
+      showStep("summary");
+      const total = window.ServiceVisitApp.calculateTotal(visitState.lineItems);
+      document.getElementById("totalLine").textContent = `Total: $${total.toFixed(2)}`;
+    }
+
+    document.getElementById("backToProductsBtn").addEventListener("click", () => {
+      showStep("products");
+    });
+
+    document.getElementById("submitBtn").addEventListener("click", async () => {
+      visitState.occupantName = document.getElementById("occupantName").value.trim();
+      visitState.notes = document.getElementById("visitNotes").value.trim();
+
+      const submitBtn = document.getElementById("submitBtn");
+      submitBtn.disabled = true;
+      setStatus("Saving visit...");
+      try {
+        const result = await window.ServiceVisitApp.saveServiceVisit(visitState);
+        document.getElementById("doneMessage").textContent =
+          `Saved. Opportunity created: ${result.opportunityId}`;
+        showStep("done");
+        setStatus("");
+      } catch (err) {
+        setStatus("Not saved — " + err.message + ". Check your connection and try again.", true);
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    document.getElementById("newVisitBtn").addEventListener("click", () => {
+      resetVisitState();
+      document.getElementById("occupantName").value = "";
+      document.getElementById("visitNotes").value = "";
+      document.getElementById("searchInput").value = "";
+      document.getElementById("newAccountName").value = "";
+      document.getElementById("newAccountStreet").value = "";
+      document.getElementById("newAccountCity").value = "";
+      document.getElementById("newAccountZip").value = "";
+      startLocating();
     });
 
     refreshView();

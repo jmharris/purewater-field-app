@@ -1,0 +1,8 @@
+{
+  "name": "purewater-field-app-tests",
+  "private": true,
+  "description": "Unit tests for the field-app's pure JS logic (not part of the deployed static site).",
+  "scripts": {
+    "test": "node --test __tests__/*.test.js"
+  }
+}
