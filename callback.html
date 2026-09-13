@@ -30,15 +30,14 @@
 
   <script src="salesforce.js"></script>
   <script>
-    window.SalesforceApi.handleCallback()
-      .then(() => {
-        window.location.href = "index.html";
-      })
-      .catch((err) => {
-        const el = document.getElementById("message");
-        el.textContent = "Login failed: " + err.message;
-        el.className = "message error";
-      });
+    try {
+      window.SalesforceApi.handleCallback();
+      window.location.href = "index.html";
+    } catch (err) {
+      const el = document.getElementById("message");
+      el.textContent = "Login failed: " + err.message;
+      el.className = "message error";
+    }
   </script>
 </body>
 </html>

@@ -79,7 +79,11 @@
     }
 
     document.getElementById("loginBtn").addEventListener("click", () => {
-      window.SalesforceApi.login().catch((err) => setStatus(err.message, true));
+      try {
+        window.SalesforceApi.login();
+      } catch (err) {
+        setStatus(err.message, true);
+      }
     });
 
     document.getElementById("logoutBtn").addEventListener("click", () => {
