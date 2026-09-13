@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PureWater Field App</title>
+  <style>
+    body {
+      font-family: -apple-system, system-ui, sans-serif;
+      margin: 0;
+      padding: 24px 16px;
+      background: #f5f5f5;
+      color: #1a1a1a;
+    }
+    .card {
+      max-width: 480px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    }
+    button {
+      width: 100%;
+      padding: 16px;
+      font-size: 18px;
+      border-radius: 8px;
+      border: none;
+      background: #0176d3;
+      color: white;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+    button:active {
+      background: #014486;
+    }
+    #status {
+      margin-top: 16px;
+      font-size: 14px;
+      color: #555;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .error {
+      color: #b00020;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>PureWater Field App</h1>
+    <div id="loggedOutView">
+      <p>Log in with your Salesforce account to record a service visit.</p>
+      <button id="loginBtn">Log In</button>
+    </div>
+    <div id="loggedInView" hidden>
+      <p>Logged in.</p>
+      <button id="testQueryBtn">Test: Query Accounts</button>
+      <button id="logoutBtn">Log Out</button>
+    </div>
+    <div id="status"></div>
+  </div>
+
+  <script src="salesforce.js"></script>
+  <script>
+    const loggedOutView = document.getElementById("loggedOutView");
+    const loggedInView = document.getElementById("loggedInView");
+    const statusEl = document.getElementById("status");
+
+    function setStatus(text, isError) {
+      statusEl.textContent = text;
+      statusEl.className = isError ? "error" : "";
+    }
+
+    function refreshView() {
+      const loggedIn = window.SalesforceApi.isLoggedIn();
+      loggedOutView.hidden = loggedIn;
+      loggedInView.hidden = !loggedIn;
+    }
+
+    document.getElementById("loginBtn").addEventListener("click", () => {
+      window.SalesforceApi.login().catch((err) => setStatus(err.message, true));
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      window.SalesforceApi.logout();
+      refreshView();
+      setStatus("Logged out.");
+    });
+
+    document.getElementById("testQueryBtn").addEventListener("click", async () => {
+      setStatus("Querying...");
+      try {
+        const records = await window.SalesforceApi.runQuery(
+          "SELECT Id, Name FROM Account WHERE Merge_Status__c = 'Active' LIMIT 5"
+        );
+        setStatus("Success! Sample accounts:\n" + records.map((r) => r.Name).join("\n"));
+      } catch (err) {
+        setStatus(err.message, true);
+      }
+    });
+
+    refreshView();
+  </script>
+</body>
+</html>
